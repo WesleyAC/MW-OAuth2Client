@@ -17,14 +17,13 @@
 if ( !defined( 'MEDIAWIKI' ) ) {
 	die( 'This is a MediaWiki extension, and must be run from within MediaWiki.' );
 }
+
 class OAuth2ClientHooks {
 	public static function onPersonalUrls( array &$personal_urls, Title $title ) {
-
 		global $wgOAuth2Client, $wgRequest;
 
-        $user = RequestContext::getMain()->getUser();
+		$user = RequestContext::getMain()->getUser();
 		if( $user->isRegistered() ) return true;
-
 
 		# Due to bug 32276, if a user does not have read permissions,
 		# $this->getTitle() will just give Special:Badtitle, which is
@@ -46,6 +45,7 @@ class OAuth2ClientHooks {
 			//'class' => ,
 			'active' => false,
 		);
+
 		if( $inExt ) {
 			$personal_urls['anon_oauth_login']['href'] = Skin::makeSpecialUrlSubpage( 'OAuth2Client', 'redirect' );
 		} else {
@@ -66,7 +66,7 @@ class OAuth2ClientHooks {
 				$personal_urls['anonlogin']['href'] = Skin::makeSpecialUrl( 'Userlogin' );
 			}
 		}
+
 		return true;
 	}
-
 }
