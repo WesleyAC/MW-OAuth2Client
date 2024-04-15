@@ -69,4 +69,48 @@ class OAuth2ClientHooks {
 
 		return true;
 	}
+
+	public static function onSkinTemplateNavigation_Universal(SkinTemplate $skinTemplate, array &$links) {
+		global $wgOAuth2Client, $wgRequest;
+
+		$user = RequestContext::getMain()->getUser();
+		if( $user->isRegistered() ) return true;
+
+		# Due to bug 32276, if a user does not have read permissions,
+		# $this->getTitle() will just give Special:Badtitle, which is
+		# not especially useful as a returnto parameter. Use the title
+		# from the request instead, if there was one.
+		# see SkinTemplate->buildPersonalUrls()
+		$page = Title::newFromURL( $wgRequest->getVal( 'title', '' ) );
+
+		$service_name = isset( $wgOAuth2Client['configuration']['service_name'] ) && 0 < strlen( $wgOAuth2Client['configuration']['service_name'] ) ? $wgOAuth2Client['configuration']['service_name'] : 'OAuth2';
+		if( isset( $wgOAuth2Client['configuration']['service_login_link_text'] ) && 0 < strlen( $wgOAuth2Client['configuration']['service_login_link_text'] ) ) {
+			$service_login_link_text = $wgOAuth2Client['configuration']['service_login_link_text'];
+		} else {
+			$service_login_link_text = wfMessage('oauth2client-header-link-text', $service_name)->text();
+		}
+
+		$inExt = ( null == $page || ('OAuth2Client' == substr( $page->getText(), 0, 12) ) || strstr($page->getText(), 'Logout') );
+		$links['user-menu']['login'] = array(
+			'text' => $service_login_link_text,
+			'class' => '',
+		);
+
+		if( $inExt ) {
+			$links['user-menu']['login']['href'] = Skin::makeSpecialUrlSubpage( 'OAuth2Client', 'redirect' );
+		} else {
+			# Due to bug 32276, if a user does not have read permissions,
+			# $this->getTitle() will just give Special:Badtitle, which is
+			# not especially useful as a returnto parameter. Use the title
+			# from the request instead, if there was one.
+			# see SkinTemplate->buildPersonalUrls()
+			$links['user-menu']['login']['href'] = Skin::makeSpecialUrlSubpage(
+				'OAuth2Client',
+				'redirect',
+				wfArrayToCGI( array( 'returnto' => $page ) )
+			);
+		}
+
+		unset( $links['user-menu']['login-private'] );
+	}
 }
